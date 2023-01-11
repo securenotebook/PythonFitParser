@@ -5,7 +5,7 @@ import platform
 import pytz
 
 #TODO - Influx setup
-client = InfluxDBClient(host='192.168.1.155', port=8086) # Connect to the InfluxDB instance
+client = InfluxDBClient(host='influxdb', port=8086) # Connect to the InfluxDB instance
 client.drop_database('strava')      # Drop Old DB
 client.create_database('strava')    # Create DB
 
@@ -31,9 +31,9 @@ for id in files:
         if power == None: power=0 # replace none with zero
         
         timestamp = record.get_value('timestamp') # Get the timestamp
-        utc = timestamp  + timedelta(hours=1)
+        # utc = timestamp  + timedelta(hours=1)
         
-        epoch = int(utc.timestamp()*1000)
+        epoch = int(timestamp.timestamp()*1000)
         
         # print(epoch)
         if min_timestamp == 0: min_timestamp = epoch
@@ -59,15 +59,6 @@ for id in files:
     client.write_points(dataPoints, database='strava')
     print(f"{id} Data written")
 
-link = f"http://192.168.1.155:3000/d/fit/fit-power-comparison?orgId=1&from={min_timestamp}&to={max_timestamp}"
 link = f"http://192.168.1.155:3000/d/qJnkG6cVk/new-dashboard?orgId=1&from={min_timestamp}&to={max_timestamp}"
+link = f"http://192.168.1.4:3000/d/fit/fit-power-comparison?orgId=1&from={min_timestamp}&to={max_timestamp}"
 print(link)
-print(min_timestamp)
-print(max_timestamp)
-
-# Min
-# 1673322014626  
-# 1673318438000
-
-# Max
-# 1673325848883  v 1673322238000
