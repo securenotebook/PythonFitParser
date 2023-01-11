@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run the command to start the app
-CMD ["python", "app.py"]
+CMD ["python", "fitparsev3.py"]

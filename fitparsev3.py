@@ -3,7 +3,7 @@ from datetime import timedelta
 from influxdb import InfluxDBClient
 
 #Change IP to DocketCompose hostName
-client = InfluxDBClient(host='192.168.1.155', port=8086) # Connect to the InfluxDB instance
+client = InfluxDBClient(host='influxdb', port=8086) # Connect to the InfluxDB instance
 client.drop_database('strava')      # Drop Old DB
 client.create_database('strava')    # Create DB
 
