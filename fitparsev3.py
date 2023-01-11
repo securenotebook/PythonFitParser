@@ -8,7 +8,7 @@ client.drop_database('strava')      # Drop Old DB
 client.create_database('strava')    # Create DB
 
 # create list of fitFiles
-files = {"quarq":FitFile('FTP-Quarq.fit'),  "kickr":FitFile('FTP-Kickr.fit'),  "assioma": FitFile('FTP-Assioma.fit')}
+files = {"quarq":FitFile('fitFiles/FTP-Quarq.fit'),  "kickr":FitFile('fitFiles/FTP-Kickr.fit'),  "assioma": FitFile('fitFiles/FTP-Assioma.fit')}
 
 #Loop through file
 for id in files: 
@@ -27,8 +27,8 @@ for id in files:
         timestamp = record.get_value('timestamp') # Get the timestamp
         
         #make some minor adjustments to timestamps
-        if id=="kirkr": timestamp = timestamp  - timedelta(seconds=3)
-        if id=="quarq": timestamp = timestamp  - timedelta(seconds=2)
+        # if id=="kirkr": timestamp = timestamp  - timedelta(seconds=7)
+        # if id=="assioma": timestamp = timestamp  - timedelta(seconds=4)
         
         #build the data point to write
         data = {

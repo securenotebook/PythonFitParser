@@ -29,6 +29,8 @@ services:
 
   pythonpower:
     image: fit-file-parser
+    environment:
+      WAIT_HOSTS: influxdb:8086, grafana:3000
     
     networks:
       - fit-network
