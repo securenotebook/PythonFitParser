@@ -1,12 +1,55 @@
 from fitparse import FitFile
 from datetime import timedelta
 from influxdb import InfluxDBClient
-import platform
-import pytz
+import os, time,subprocess, sys
 
-#TODO - Influx setup
-client = InfluxDBClient(host='influxdb', port=8086) # Connect to the InfluxDB instance
-client.drop_database('strava')      # Drop Old DB
+# wait 5 second as the DB maybe not be up yet. 
+time.sleep(2)
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# Load Enviroment
+DEV = os.getenv('FIT_MODE')
+INFLUX_HOST = os.getenv('INFLUX_HOST'+DEV)
+GRAFANA_URL = os.getenv('GRAFANA_URL'+DEV)
+
+# def print(string):
+#     sys.stdout.write(f"{string}\n")
+
+
+print("Running in Mode: " + DEV, flush=True)
+print("Connection to infuxdb: " + str(INFLUX_HOST), flush=True)
+
+
+notConnected = False
+maxRetiries = 10
+count=1
+while notConnected is False:
+
+    try:
+        #TODO - Influx setup
+        client = InfluxDBClient(host=INFLUX_HOST, port=8086) # Connect to the InfluxDB instance
+
+        health = client.health()
+        if health.status == "pass":
+            print("Connection success.", flush=True)
+            notConnected = True
+        
+        
+    except :
+        print(f"********** Connection failure: retrying {count} of max {maxRetiries}", flush=True)
+
+        count+=1
+        time.sleep(2)
+
+        if count >= maxRetiries:
+           exit(0)
+
+print(f"Dropping DB Strava", flush=True)
+# client.drop_database('strava')      # Drop Old DB
+
+print(f"Creating DB Strava", flush=True)
 client.create_database('strava')    # Create DB
 
 # create list of fitFiles
@@ -27,8 +70,10 @@ for id in files:
     for record in file.get_messages("record"):
         
         power = record.get_value('power') # Get the power data
+        cad = record.get_value('cadence') # Get the power data
 
         if power == None: power=0 # replace none with zero
+        if cad == None:cad = 0
         
         timestamp = record.get_value('timestamp') # Get the timestamp
         # utc = timestamp  + timedelta(hours=1)
@@ -51,7 +96,8 @@ for id in files:
         data = {'measurement': 'strava',
                 'time': timestamp,
                 'tags': { 'powerMeter': id},
-                'fields': {'power': power}}
+                 'fields':   {'power': power, 'cadence':cad}
+                }
 
         dataPoints.append(data)
         
@@ -59,6 +105,6 @@ for id in files:
     client.write_points(dataPoints, database='strava')
     print(f"{id} Data written")
 
-link = f"http://192.168.1.155:3000/d/qJnkG6cVk/new-dashboard?orgId=1&from={min_timestamp}&to={max_timestamp}"
-link = f"http://192.168.1.4:3000/d/fit/fit-power-comparison?orgId=1&from={min_timestamp}&to={max_timestamp}"
-print(link)
+GRAFANA_URL=GRAFANA_URL.replace("{min}", str(min_timestamp))
+GRAFANA_URL=GRAFANA_URL.replace("{max}", str(max_timestamp))
+print(GRAFANA_URL)

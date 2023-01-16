@@ -2,8 +2,6 @@ version: "3"
 services:
   influxdb:
     image: influxdb:1.8.2
-    networks:
-      - fit-network
     volumes:
       - influxdb-storage:/var/lib/influxdb
     restart: always
@@ -11,6 +9,10 @@ services:
       - INFLUXDB_DB=strava
       - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
       - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+    ports:
+      - "8086:8086"
+    networks:
+      - fit-network
   grafana:
     image: grafana/grafana
     networks:
@@ -29,8 +31,9 @@ services:
 
   pythonpower:
     image: fit-file-parser
-    environment:
-      WAIT_HOSTS: influxdb:8086, grafana:3000
+    depends_on:
+      - influxdb
+      - grafana
     
     networks:
       - fit-network
@@ -41,9 +44,4 @@ volumes:
 
 networks:
   fit-network:
-
-
-
-
-
-
+    driver: bridge

@@ -1,3 +1,5 @@
 fitparse
 influxdb
 watchdog
+python-dotenv
+loguru
