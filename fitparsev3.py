@@ -2,68 +2,61 @@ from fitparse import FitFile
 from datetime import timedelta
 from influxdb import InfluxDBClient
 import os, time,subprocess, sys
-
-# wait 5 second as the DB maybe not be up yet. 
-time.sleep(2)
+import ipcalc
+from rich import inspect
 
 from dotenv import load_dotenv
 load_dotenv()
 
+def log(string):
+    print(string, flush=True)
+
+# wait 5 second as the DB maybe not be up yet. 
+time.sleep(5)
+
 # Load Enviroment
+log("Loading .env")
 DEV = os.getenv('FIT_MODE')
 INFLUX_HOST = os.getenv('INFLUX_HOST'+DEV)
 GRAFANA_URL = os.getenv('GRAFANA_URL'+DEV)
 
-# def print(string):
-#     sys.stdout.write(f"{string}\n")
+log("Running in Mode: " + DEV)
+log("Connection to infuxdb: " + str(INFLUX_HOST))
 
+client = InfluxDBClient(host=INFLUX_HOST, port=8086, username='admin', password='admin') # Connect to the InfluxDB instance
 
-print("Running in Mode: " + DEV, flush=True)
-print("Connection to infuxdb: " + str(INFLUX_HOST), flush=True)
+log(f"Dropping DB Strava")
+client.drop_database('strava')      # Drop Old DB
 
-
-notConnected = False
-maxRetiries = 10
-count=1
-while notConnected is False:
-
-    try:
-        #TODO - Influx setup
-        client = InfluxDBClient(host=INFLUX_HOST, port=8086) # Connect to the InfluxDB instance
-
-        health = client.health()
-        if health.status == "pass":
-            print("Connection success.", flush=True)
-            notConnected = True
-        
-        
-    except :
-        print(f"********** Connection failure: retrying {count} of max {maxRetiries}", flush=True)
-
-        count+=1
-        time.sleep(2)
-
-        if count >= maxRetiries:
-           exit(0)
-
-print(f"Dropping DB Strava", flush=True)
-# client.drop_database('strava')      # Drop Old DB
-
-print(f"Creating DB Strava", flush=True)
+log(f"Creating DB Strava")
 client.create_database('strava')    # Create DB
 
-# create list of fitFiles
-files = {"quarq":FitFile('fitFiles/FTP-Quarq.fit'), "kickr":FitFile('fitFiles/FTP-Kickr.fit'),  "assioma": FitFile('fitFiles/FTP-Assioma.fit')}
+dir = os.getcwd() + "/fitFiles/"
+dir_list = os.listdir(dir)
+
+fit_files = []
+for x in dir_list:
+    if x.endswith(".fit"):
+        path = dir + x
+        newFitFile = FitFile(path)
+        fit_files.append(newFitFile)
 
 grafana_link = ""
 min_timestamp =0
 max_timestamp =0
 
-#Loop through file
-for id in files: 
-    file = files[id]
+#Loop through the fit files
+for file in fit_files: 
+    
+    #get device details
+    deviceDetails   = file.messages[0].get_values()
+    manufacturer    = deviceDetails['manufacturer']
+    serial          = deviceDetails['serial_number']
+    
+    manufactor = f"{manufacturer}_{serial}" 
 
-    print(f"Processing file {id}")
+    log(f"Processing file, manufacturer {manufacturer}, Serial: {serial}")
+    
     
     # Iterate through all the data messages in the file
     dataPoints=[]
@@ -80,7 +73,7 @@ for id in files:
         
         epoch = int(timestamp.timestamp()*1000)
         
-        # print(epoch)
+        # log(epoch)
         if min_timestamp == 0: min_timestamp = epoch
         if epoch < min_timestamp : min_timestamp = epoch
         if epoch > max_timestamp: max_timestamp = epoch
@@ -95,16 +88,16 @@ for id in files:
         #build the data point to write
         data = {'measurement': 'strava',
                 'time': timestamp,
-                'tags': { 'powerMeter': id},
+                'tags': { 'powerMeter': manufacturer},
                  'fields':   {'power': power, 'cadence':cad}
                 }
 
         dataPoints.append(data)
         
-    print(f"{id} - Data Loaded - Writing to influx")
+    log(f"{id} - Data Loaded - Writing to influx")
     client.write_points(dataPoints, database='strava')
-    print(f"{id} Data written")
+    log(f"{id} Data written")
 
 GRAFANA_URL=GRAFANA_URL.replace("{min}", str(min_timestamp))
 GRAFANA_URL=GRAFANA_URL.replace("{max}", str(max_timestamp))
-print(GRAFANA_URL)
+log(GRAFANA_URL)

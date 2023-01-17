@@ -3,3 +3,5 @@ influxdb
 watchdog
 python-dotenv
 loguru
+ipcalc
+rich

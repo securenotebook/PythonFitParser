@@ -29,10 +29,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "jXStz6cVk"
-      },
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -115,10 +112,7 @@
       "pluginVersion": "9.3.2",
       "targets": [
         {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "jXStz6cVk"
-          },
+          "datasource": "InfluxDB",
           "groupBy": [
             {
               "params": [
@@ -160,10 +154,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "jXStz6cVk"
-      },
+      "datasource": "InfluxDB",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -246,10 +237,7 @@
       "pluginVersion": "9.3.2",
       "targets": [
         {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "jXStz6cVk"
-          },
+          "datasource": "InfluxDB",
           "groupBy": [
             {
               "params": [
