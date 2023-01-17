@@ -1,36 +1,14 @@
-from fitparse import FitFile
-from datetime import timedelta
-from influxdb import InfluxDBClient
-import os, time,subprocess, sys
-import ipcalc
-from rich import inspect
+from fitHelperMethods import *
 
-from dotenv import load_dotenv
-load_dotenv()
+client = getInfluxConnection()
+        
+if client == False:
+    log(f"Could not connect to database {INFLUX_HOST} exiting")
+    exit(0)
 
-def log(string):
-    print(string, flush=True)
+# client.drop_database(DATABASE)   
 
-# wait 5 second as the DB maybe not be up yet. 
-time.sleep(5)
-
-# Load Enviroment
-log("Loading .env")
-DEV = os.getenv('FIT_MODE')
-INFLUX_HOST = os.getenv('INFLUX_HOST'+DEV)
-GRAFANA_URL = os.getenv('GRAFANA_URL'+DEV)
-
-log("Running in Mode: " + DEV)
-log("Connection to infuxdb: " + str(INFLUX_HOST))
-
-client = InfluxDBClient(host=INFLUX_HOST, port=8086, username='admin', password='admin') # Connect to the InfluxDB instance
-
-log(f"Dropping DB Strava")
-client.drop_database('strava')      # Drop Old DB
-
-log(f"Creating DB Strava")
-client.create_database('strava')    # Create DB
-
+#Load .fit files from fitFiles dir
 dir = os.getcwd() + "/fitFiles/"
 dir_list = os.listdir(dir)
 
@@ -73,18 +51,12 @@ for file in fit_files:
         
         epoch = int(timestamp.timestamp()*1000)
         
-        # log(epoch)
+        # create start and stop time stamp per file
         if min_timestamp == 0: min_timestamp = epoch
         if epoch < min_timestamp : min_timestamp = epoch
         if epoch > max_timestamp: max_timestamp = epoch
 
        
-        # record.get_value('timestamp').
-        
-        #make some minor adjustments to timestamps
-        # 
-        # if id=="assioma": timestamp = timestamp  - timedelta(seconds=4)
-        
         #build the data point to write
         data = {'measurement': 'strava',
                 'time': timestamp,
@@ -94,9 +66,9 @@ for file in fit_files:
 
         dataPoints.append(data)
         
-    log(f"{id} - Data Loaded - Writing to influx")
+    log(f"{manufacturer} - Data Loaded - Writing to influx")
     client.write_points(dataPoints, database='strava')
-    log(f"{id} Data written")
+    log(f"{manufacturer} Data written")
 
 GRAFANA_URL=GRAFANA_URL.replace("{min}", str(min_timestamp))
 GRAFANA_URL=GRAFANA_URL.replace("{max}", str(max_timestamp))
