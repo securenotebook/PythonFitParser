@@ -25,7 +25,7 @@ log(f"Using infuxdb: {INFLUX_HOST}")
 def getInfluxConnection():
     # Load Enviroment
     
-    retryAmount = 
+    retryAmount = 10
     sleep=2
     count=1
     while True:
